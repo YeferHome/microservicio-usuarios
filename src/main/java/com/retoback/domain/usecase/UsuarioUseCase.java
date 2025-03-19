@@ -3,7 +3,7 @@ package com.retoback.domain.usecase;
 import com.retoback.domain.api.IUsuarioServicePort;
 import com.retoback.domain.model.Usuario;
 import com.retoback.domain.spi.IUsuarioPersistencePort;
-import com.retoback.infrastructure.exception.BusinessException;
+import com.retoback.infrastructure.exception.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -24,36 +24,36 @@ public class UsuarioUseCase implements IUsuarioServicePort {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         if (auth == null || !auth.isAuthenticated() || auth.getAuthorities().isEmpty()) {
-            throw new BusinessException("No estás autenticado, no se puede crear un usuario.");
+            throw new UnableToCreateUserException("No estás autenticado, no se puede crear un usuario.");
         }
 
         String authority = auth.getAuthorities().iterator().next().getAuthority();
 
-      /*  if (!"ROLE_ADMINISTRADOR".equals(authority)) {
-            throw new BusinessException("Solo un administrador puede crear usuarios");
+       /*if (!"ROLE_ADMINISTRADOR".equals(authority)) {
+            throw new OnlyTheAdministratorCanCreateAUserException("Solo un administrador puede crear usuarios");
         }*/
 
         if ("EMPLEADO".equals(usuario.getRol().toString())) {
             if (!"ROLE_PROPIETARIO".equals(authority)) {
-                throw new BusinessException("Solo un propietario puede crear empleados.");
+                throw new OnlyAnOwnerCanCreateEmployeeException("Solo un propietario puede crear empleados.");
             }
         }
 
         if (!esCorreoValido(usuario.getCorreo())) {
-            throw new BusinessException("Correo no válido, revise la estructura (ej. usuario@dominio.com)");
+            throw new InvalidEmailException("Correo no válido, revise la estructura (ej. usuario@dominio.com)");
         }
 
         if (!esCelularValido(usuario.getCelular())) {
-            throw new BusinessException("Invalid phone number; maximum 13 digits and must start with '+'.");
+            throw new InvalidPhoneNumberException("Invalid phone number; maximum 13 digits and must start with '+'.");
         }
 
         if (usuario.getDocumentoDeIdentidad() == null || usuario.getDocumentoDeIdentidad() <= 0) {
-            throw new BusinessException("Documento de identidad debe ser un número positivo.");
+            throw new InvalidIdentityDocumentException("Documento de identidad debe ser un número positivo.");
         }
 
 
         if (!esMayorDeEdad(usuario.getFechaNacimiento())) {
-            throw new BusinessException("El usuario debe ser mayor de 18 años.");
+            throw new UnderageUserException("El usuario debe ser mayor de 18 años.");
         }
 
         usuarioPersistencePort.saveUsuario(usuario);
